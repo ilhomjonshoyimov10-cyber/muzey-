@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Muzey</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--ink:#f3ead8;--brass:#c9973f;--glass:rgba(24,18,14,.82);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#120d0a;color:var(--ink);font-family:Georgia,"Times New Roman",serif}
+body{padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px))}
+body.v{overflow:hidden;touch-action:none;padding:0;height:100%}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+.bar{position:fixed;left:0;right:0;display:flex;gap:10px;justify-content:center;align-items:center;padding:12px;z-index:2;flex-wrap:wrap}
+.top{top:0;padding-top:calc(12px + env(safe-area-inset-top,0px))}
+.bottom{bottom:0;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+h1{margin:0;font-size:20px;font-weight:400;font-style:italic;background:var(--glass);padding:8px 16px;border-radius:999px;border:1px solid rgba(201,151,63,.45)}
+h2{font-weight:400;font-style:italic}
+.btn{display:inline-block;background:var(--glass);color:var(--ink);border:1px solid var(--brass);border-radius:12px;padding:12px 18px;font:600 15px Georgia,serif;cursor:pointer;user-select:none;-webkit-user-select:none;text-decoration:none}
+.btn:active{background:var(--brass);color:#120d0a}
+input[type=text]{width:100%;padding:12px;margin:0 0 12px;border-radius:12px;border:1px solid var(--brass);background:#1d1510;color:var(--ink);font:16px Georgia,serif}
+.card{display:block;padding:16px;margin:0 0 10px;border:1px solid rgba(201,151,63,.45);border-radius:12px;color:var(--ink);text-decoration:none;background:#1d1510}
+a{color:var(--brass)}
+#qr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(18,13,10,.94);z-index:5;text-align:center}
+#qr img{width:min(70vw,320px);border-radius:12px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const INIT = tg ? tg.initData : "";
+const $ = s => document.querySelector(s);
+const root = $("#root");
+const esc = s => s.replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const api = (u, o = {}) => fetch(u, {...o, headers: {"X-Init": INIT, ...(o.headers || {})}}).then(async r => {
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.detail || "Xatolik yuz berdi");
+  return j;
+});
+
+const p = location.pathname;
+if (p.startsWith("/m/")) view(p.slice(3)); else if (p === "/my") mine(); else create();
+
+function create() {
+  root.innerHTML = `<h2>Yangi muzey</h2>
+    <input id="t" type="text" maxlength="60" placeholder="Muzey nomi">
+    <label class="btn" for="f" id="lb">Rasm yoki video tanlash</label>
+    <input id="f" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple hidden>
+    <p id="msg"></p><div class="btn" id="go">Muzey yaratish</div>
+    <p><a href="/my">Muzeylarim</a></p>`;
+  $("#f").onchange = e => $("#lb").textContent = e.target.files.length + " ta fayl tanlandi";
+  $("#go").onclick = async () => {
+    const fs = $("#f").files;
+    if (!fs.length) return $("#msg").textContent = "Avval fayl tanlang";
+    $("#msg").textContent = "Yuklanmoqda…";
+    try {
+      const list = [...fs];
+      const r = await api("/api/create", {method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({title: $("#t").value, files: list.map(f => ({type: f.type, size: f.size}))})});
+      const st = supabase.createClient(r.url, r.key).storage.from("muzey");
+      for (let i = 0; i < list.length; i++) {
+        $("#msg").textContent = `Yuklanmoqda… ${i + 1}/${list.length}`;
+        const {error} = await st.uploadToSignedUrl(r.signed[i].path, r.signed[i].token, list[i], {contentType: list[i].type});
+        if (error) throw new Error("Yuklashda xatolik: " + error.message);
+      }
+      location.href = "/m/" + r.id;
+    } catch (e) { $("#msg").textContent = e.message; }
+  };
+}
+
+async function mine() {
+  root.innerHTML = `<h2>Muzeylarim</h2><div id="l">Yuklanmoqda…</div><p><a class="btn" href="/create">Yangi muzey</a></p>`;
+  try {
+    const a = await api("/api/my");
+    $("#l").innerHTML = a.length ? a.map(m => `<a class="card" href="/m/${m.id}">🏛 ${esc(m.title)}</a>`).join("") : "Hali muzey yoʻq.";
+  } catch (e) { $("#l").textContent = e.message; }
+}
+
+async function view(id) {
+  let d;
+  try { d = await api("/api/museum?id=" + id); } catch (e) { root.textContent = "Muzey topilmadi."; return; }
+  document.body.className = "v"; document.title = d.title;
+  root.innerHTML = `<div class="bar top"><h1 id="h"></h1></div>
+    <div class="bar bottom"><div class="btn" id="bk">▼</div><div class="btn" id="sh">Ulashish</div><div class="btn" id="qb">QR</div><div class="btn" id="fw">▲</div></div>
+    <div id="qr"><img src="/api/qr?id=${id}" alt="QR kod"><p>Telefon kamerasi bilan skanerlang</p></div>`;
+  $("#h").textContent = d.title;
+  const url = location.origin + "/m/" + id;
+  $("#sh").onclick = () => {
+    const s = "https://t.me/share/url?url=" + encodeURIComponent(url) + "&text=" + encodeURIComponent("Sizga muzey sovgʻa qildim 💝");
+    if (tg) tg.openTelegramLink(s); else if (navigator.share) navigator.share({url}); else open(s);
+  };
+  $("#qb").onclick = () => $("#qr").style.display = "flex";
+  $("#qr").onclick = () => $("#qr").style.display = "none";
+
+  const vids = [];
+  const items = (await Promise.all(d.items.map(it => new Promise(res => {
+    if (it.kind === "video") {
+      const v = document.createElement("video");
+      v.crossOrigin = "anonymous"; v.muted = true; v.loop = true; v.playsInline = true; v.setAttribute("playsinline", "");
+      v.onloadedmetadata = () => { v.play().catch(() => {}); vids.push(v); res({el: v, w: v.videoWidth, h: v.videoHeight, video: 1}); };
+      v.onerror = () => res(null); v.src = it.src;
+    } else {
+      const i = new Image(); i.crossOrigin = "anonymous";
+      i.onload = () => res({el: i, w: i.naturalWidth, h: i.naturalHeight});
+      i.onerror = () => res(null); i.src = it.src;
+    }
+  })))).filter(Boolean);
+
+  const HW = 6, H = 4;
+  const renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  document.body.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x120d0a);
+  scene.fog = new THREE.Fog(0x120d0a, 8, 34);
+  const cam = new THREE.PerspectiveCamera(70, 1, 0.1, 100);
+  cam.rotation.order = "YXZ";
+  const L = Math.max(18, Math.ceil(items.length / 2) * 4.6 + 6);
+  const plane = (w, h, c, x, y, z, ry, rx) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({color: c, roughness: 0.85}));
+    m.position.set(x, y, z); m.rotation.y = ry || 0; m.rotation.x = rx || 0; scene.add(m);
+  };
+  plane(HW * 2, L, 0x4a3426, 0, 0, -L / 2, 0, -Math.PI / 2);
+  plane(HW * 2, L, 0x1c1410, 0, H, -L / 2, 0, Math.PI / 2);
+  plane(L, H, 0xe6dcc8, -HW, H / 2, -L / 2, Math.PI / 2);
+  plane(L, H, 0xe6dcc8, HW, H / 2, -L / 2, -Math.PI / 2);
+  plane(HW * 2, H, 0xd9ceb6, 0, H / 2, 0, Math.PI);
+  plane(HW * 2, H, 0xd9ceb6, 0, H / 2, -L, 0);
+  scene.add(new THREE.AmbientLight(0xfff1d6, 0.7));
+  for (let z = -3; z > -L; z -= 6) { const pl = new THREE.PointLight(0xffe2b0, 0.9, 16); pl.position.set(0, H - 0.4, z); scene.add(pl); }
+  items.forEach((im, i) => {
+    const left = i % 2 === 0, k = Math.floor(i / 2);
+    const s = Math.min(3 / im.w, 2.4 / im.h), w = im.w * s, h = im.h * s;
+    const g = new THREE.Group();
+    g.position.set(left ? -HW + 0.07 : HW - 0.07, 2, -(3.5 + k * 4.6));
+    g.rotation.y = left ? Math.PI / 2 : -Math.PI / 2;
+    const fr = new THREE.Mesh(new THREE.BoxGeometry(w + 0.34, h + 0.34, 0.12), new THREE.MeshStandardMaterial({color: 0xb98a37, roughness: 0.35, metalness: 0.6}));
+    const tex = im.video ? new THREE.VideoTexture(im.el) : new THREE.Texture(im.el);
+    tex.encoding = THREE.sRGBEncoding; tex.needsUpdate = true;
+    const pic = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({map: tex}));
+    pic.position.z = 0.07; g.add(fr, pic); scene.add(g);
+  });
+
+  let yaw = 0, pitch = 0, drag = null, mv = 0; const pos = new THREE.Vector3(0, 1.6, -2), keys = {};
+  renderer.domElement.addEventListener("pointerdown", e => { drag = {x: e.clientX, y: e.clientY}; vids.forEach(v => v.play().catch(() => {})); });
+  addEventListener("pointerup", () => drag = null);
+  addEventListener("pointermove", e => {
+    if (!drag) return;
+    yaw -= (e.clientX - drag.x) * 0.005; pitch = Math.max(-0.9, Math.min(0.9, pitch - (e.clientY - drag.y) * 0.005));
+    drag = {x: e.clientX, y: e.clientY};
+  });
+  addEventListener("keydown", e => keys[e.key.toLowerCase()] = 1);
+  addEventListener("keyup", e => keys[e.key.toLowerCase()] = 0);
+  [["fw", 1], ["bk", -1]].forEach(([b, dir]) => {
+    const el = $("#" + b);
+    el.addEventListener("pointerdown", e => { e.stopPropagation(); mv = dir; });
+    ["pointerup", "pointerleave"].forEach(t => el.addEventListener(t, () => mv = 0));
+  });
+  const resize = () => { renderer.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); };
+  addEventListener("resize", resize); resize();
+  let last = performance.now();
+  (function loop(t) {
+    const dt = Math.min((t - last) / 1000, 0.05); last = t;
+    const f = mv + (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
+    const r = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+    pos.x += (-Math.sin(yaw) * f + Math.cos(yaw) * r) * 3.2 * dt;
+    pos.z += (-Math.cos(yaw) * f - Math.sin(yaw) * r) * 3.2 * dt;
+    pos.x = Math.max(-HW + 0.9, Math.min(HW - 0.9, pos.x));
+    pos.z = Math.max(-L + 0.9, Math.min(-0.9, pos.z));
+    cam.position.copy(pos); cam.rotation.set(pitch, yaw, 0);
+    renderer.render(scene, cam); requestAnimationFrame(loop);
+  })(last);
+}
+</script>
+</body>
+</html>

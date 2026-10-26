@@ -1,0 +1,9 @@
+{
+  "name": "muzey",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "qrcode": "^1.5.4"
+  }
+}

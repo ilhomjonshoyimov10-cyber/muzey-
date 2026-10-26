@@ -1,0 +1,9 @@
+{
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/", "destination": "/app.html" },
+    { "source": "/create", "destination": "/app.html" },
+    { "source": "/my", "destination": "/app.html" },
+    { "source": "/m/:id", "destination": "/app.html" }
+  ]
+}
