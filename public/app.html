@@ -4,28 +4,72 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Muzey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-:root{--ink:#f3ead8;--brass:#c9973f;--glass:rgba(24,18,14,.82);color-scheme:dark}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#120d0a;color:var(--ink);font-family:Georgia,"Times New Roman",serif}
-body{padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px))}
-body.v{overflow:hidden;touch-action:none;padding:0;height:100%}
+:root{--bg:#faf7f2;--card:#fff;--ink:#1d1b19;--mute:#7b756b;--line:#e8e2d8;--acc:#e54864;--acc2:#c9973f;--shadow:0 8px 30px rgba(40,30,20,.1);color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#14110f;--card:#1e1a17;--ink:#f4efe6;--mute:#a39b8e;--line:#2e2824;--shadow:0 8px 30px rgba(0,0,0,.45)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(110px + env(safe-area-inset-bottom,0px))}
+body.v{overflow:hidden;touch-action:none;padding:0;height:100%;background:#e9e5de}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
-.bar{position:fixed;left:0;right:0;display:flex;gap:10px;justify-content:center;align-items:center;padding:12px;z-index:2;flex-wrap:wrap}
-.top{top:0;padding-top:calc(12px + env(safe-area-inset-top,0px))}
-.bottom{bottom:0;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
-h1{margin:0;font-size:20px;font-weight:400;font-style:italic;background:var(--glass);padding:8px 16px;border-radius:999px;border:1px solid rgba(201,151,63,.45)}
-h2{font-weight:400;font-style:italic}
-.btn{display:inline-block;background:var(--glass);color:var(--ink);border:1px solid var(--brass);border-radius:12px;padding:12px 18px;font:600 15px Georgia,serif;cursor:pointer;user-select:none;-webkit-user-select:none;text-decoration:none}
-.btn:active{background:var(--brass);color:#120d0a}
-input[type=text]{width:100%;padding:12px;margin:0 0 12px;border-radius:12px;border:1px solid var(--brass);background:#1d1510;color:var(--ink);font:16px Georgia,serif}
-.card{display:block;padding:16px;margin:0 0 10px;border:1px solid rgba(201,151,63,.45);border-radius:12px;color:var(--ink);text-decoration:none;background:#1d1510}
-a{color:var(--brass)}
-#qr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(18,13,10,.94);z-index:5;text-align:center}
-#qr img{width:min(70vw,320px);border-radius:12px}
+a{color:var(--acc)}
+.wrap{max-width:560px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#e54864,#c9973f);color:#fff;display:grid;place-items:center;font-size:18px;letter-spacing:0}
+.logo.big{width:64px;height:64px;font-size:34px;border-radius:20px;margin:0 auto 14px}
+h1.hero{font:italic 400 36px/1.1 "Playfair Display",Georgia,serif;margin:22px 0 10px}
+.sub{color:var(--mute);line-height:1.55;margin:0 0 22px}
+.steps{display:flex;gap:6px;margin:0 0 18px}.steps i{flex:1;height:4px;border-radius:4px;background:var(--line);transition:background .3s}.steps i.on{background:var(--acc)}
+.drop{border:1.5px dashed var(--acc2);border-radius:22px;padding:30px 18px;text-align:center;background:var(--card);cursor:pointer;transition:.2s;box-shadow:var(--shadow)}
+.drop.over{background:rgba(201,151,63,.14);transform:scale(1.01)}
+.drop b{display:block;font-size:17px;margin:12px 0 4px}.drop small{color:var(--mute);line-height:1.4}
+.ico{width:56px;height:56px;border-radius:18px;background:rgba(229,72,100,.12);color:var(--acc);display:grid;place-items:center;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 0}
+.th{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--line);animation:pop .25s ease}
+.th img,.th video{width:100%;height:100%;object-fit:cover;display:block}
+.th button{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.62);color:#fff;font-size:16px;line-height:1;cursor:pointer}
+.th .vb{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.62);color:#fff;font-size:11px;padding:2px 8px;border-radius:99px}
+.fl{display:block;font-weight:600;font-size:13px;margin:20px 0 8px}
+.tx{width:100%;padding:15px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:16px Inter,system-ui,sans-serif;outline:none}
+.tx:focus{border-color:var(--acc)}
+.err{color:#d23b3b;font-size:14px;min-height:20px;margin:10px 0 0}
+.cta{position:fixed;left:0;right:0;bottom:0;padding:26px 18px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 40%);z-index:4}
+.go{position:relative;overflow:hidden;display:block;width:100%;max-width:560px;margin:0 auto;border:0;border-radius:16px;padding:17px;background:var(--acc);color:#fff;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(229,72,100,.35);text-align:center;text-decoration:none}
+.go[disabled]{opacity:.45;box-shadow:none}
+.go .fill{position:absolute;inset:0 auto 0 0;width:0;background:rgba(255,255,255,.3);transition:width .35s}
+.go span{position:relative}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:20px}
+.mc{display:block;border-radius:20px;overflow:hidden;background:var(--card);box-shadow:var(--shadow);color:var(--ink);text-decoration:none;animation:pop .35s ease both}
+.mc .cv{aspect-ratio:4/3;background:linear-gradient(135deg,#e9c9a0,#e0788d) center/cover;display:grid;place-items:center;font-size:34px;color:#fff}
+.mc .tt{padding:13px 14px;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sk{height:176px;border-radius:20px;background:linear-gradient(90deg,var(--line),var(--card),var(--line));background-size:200% 100%;animation:sh 1.2s infinite}
+.empty{text-align:center;padding:70px 20px;color:var(--mute);line-height:1.6}
+@keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+@keyframes sh{to{background-position:-200% 0}}
+@keyframes rot{to{transform:rotate(360deg)}}
+#splash{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:var(--bg);text-align:center;transition:opacity .5s;color:var(--mute)}
+.spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;margin:16px auto 0;animation:rot .8s linear infinite}
+.top2{position:fixed;top:0;left:0;right:0;z-index:3;display:flex;gap:8px;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 0}
+.pill{background:rgba(255,255,255,.8);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:#1d1b19;border-radius:999px;height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;font:600 15px Inter,system-ui,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.16);text-decoration:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.pill.round{width:44px;padding:0;justify-content:center;font-size:24px;flex:none}
+.pill.title{flex:1;min-width:0}.pill.title span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrt{color:#e54864}.pill.red{background:#e54864;color:#fff;flex:none}
+.side{position:fixed;right:16px;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:3;display:flex;flex-direction:column;gap:10px}
+.side .pill{font-size:13px}.side #tm{font-size:20px}
+#joy{position:fixed;left:calc(22px + env(safe-area-inset-left,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 14px rgba(0,0,0,.22);z-index:3;touch-action:none}
+#knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.32)}
+#cnt{position:fixed;right:16px;bottom:calc(30px + env(safe-area-inset-bottom,0px));z-index:3;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:#1d1b19;border-radius:999px;padding:12px 16px;font:600 15px Inter,system-ui,sans-serif;display:flex;gap:8px;align-items:center;box-shadow:0 2px 12px rgba(0,0,0,.16)}
+#hint{position:fixed;left:0;right:0;bottom:calc(172px + env(safe-area-inset-bottom,0px));text-align:center;z-index:3;color:#fff;font:600 14px Inter,system-ui,sans-serif;text-shadow:0 1px 8px rgba(0,0,0,.7);transition:opacity .8s;pointer-events:none;padding:0 20px}
+#zoom{position:fixed;inset:0;z-index:6;display:none;align-items:center;justify-content:center;background:rgba(10,8,6,.92)}
+#zoom img,#zoom video{max-width:94vw;max-height:88vh;border-radius:10px}
+#qr{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,8,6,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:7}
+.qc{background:#fff;color:#1d1b19;border-radius:24px;padding:22px 22px 18px;text-align:center;width:min(86vw,340px);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.qc img{width:100%;border-radius:12px;display:block}.qc b{display:block;margin:14px 0 2px}.qc p{margin:0;color:#7b756b;font-size:13px}
 </style>
 </head>
 <body>
@@ -47,47 +91,102 @@ const p = location.pathname;
 if (p.startsWith("/m/")) view(p.slice(3)); else if (p === "/my") mine(); else create();
 
 function create() {
-  root.innerHTML = `<h2>Yangi muzey</h2>
-    <input id="t" type="text" maxlength="60" placeholder="Muzey nomi">
-    <label class="btn" for="f" id="lb">Rasm yoki video tanlash</label>
+  let files = [];
+  const OKT = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"];
+  root.innerHTML = `<div class="wrap">
+    <div class="brand"><div class="logo">♥</div>Muzey</div>
+    <h1 class="hero">Rasmlaringizdan 3D muzey</h1>
+    <p class="sub">Suratlar va videolarni tanlang. Biz ularni ramkalarga osib, ichida yurib koʻriladigan galereya yasaymiz.</p>
+    <div class="steps"><i class="on"></i><i id="s2"></i><i id="s3"></i></div>
+    <div class="drop" id="dz"><div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5-9 9"/></svg></div><b>Rasm yoki video tanlang</b><small>JPG, PNG, WEBP, MP4 · 20 tagacha · har biri 25 MB gacha</small></div>
     <input id="f" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple hidden>
-    <p id="msg"></p><div class="btn" id="go">Muzey yaratish</div>
-    <p><a href="/my">Muzeylarim</a></p>`;
-  $("#f").onchange = e => $("#lb").textContent = e.target.files.length + " ta fayl tanlandi";
+    <div class="grid" id="g"></div>
+    <label class="fl" for="t">Muzey nomi</label>
+    <input class="tx" id="t" maxlength="60" placeholder="Masalan: Bizning xotiralar">
+    <div class="err" id="msg"></div>
+    <p style="text-align:center"><a href="/my">Muzeylarim</a></p></div>
+    <div class="cta"><button class="go" id="go" disabled><div class="fill" id="fill"></div><span id="gl">Muzey yaratish</span></button></div>`;
+  const draw = () => {
+    const g = $("#g"); g.innerHTML = "";
+    files.forEach((f, i) => {
+      const d = document.createElement("div"); d.className = "th";
+      d.innerHTML = f.file.type.startsWith("video") ? `<video src="${f.url}#t=0.1" muted playsinline preload="metadata"></video><span class="vb">video</span>` : `<img src="${f.url}" alt="">`;
+      const b = document.createElement("button"); b.textContent = "×";
+      b.onclick = () => { URL.revokeObjectURL(f.url); files.splice(i, 1); draw(); };
+      d.append(b); g.append(d);
+    });
+    $("#go").disabled = !files.length;
+    $("#s2").className = files.length ? "on" : ""; $("#s3").className = files.length && $("#t").value.trim() ? "on" : "";
+    $("#gl").textContent = files.length ? `Muzey yaratish · ${files.length} ta` : "Muzey yaratish";
+  };
+  const add = list => {
+    $("#msg").textContent = "";
+    for (const file of list) {
+      if (files.length >= 20) { $("#msg").textContent = "Eng koʻpi bilan 20 ta fayl mumkin"; break; }
+      if (!OKT.includes(file.type)) { $("#msg").textContent = "Faqat JPG, PNG, WEBP rasm va MP4, WEBM video mumkin"; continue; }
+      if (file.size > 25 * 1024 * 1024) { $("#msg").textContent = `«${file.name}» 25 MB dan katta`; continue; }
+      files.push({file, url: URL.createObjectURL(file)});
+    }
+    draw();
+  };
+  const dz = $("#dz");
+  dz.onclick = () => $("#f").click();
+  dz.ondragover = e => { e.preventDefault(); dz.classList.add("over"); };
+  dz.ondragleave = () => dz.classList.remove("over");
+  dz.ondrop = e => { e.preventDefault(); dz.classList.remove("over"); add(e.dataTransfer.files); };
+  $("#f").onchange = e => { add(e.target.files); e.target.value = ""; };
+  $("#t").oninput = draw;
   $("#go").onclick = async () => {
-    const fs = $("#f").files;
-    if (!fs.length) return $("#msg").textContent = "Avval fayl tanlang";
-    $("#msg").textContent = "Yuklanmoqda…";
+    if (!files.length) return;
+    const btn = $("#go"); btn.disabled = true; $("#msg").textContent = ""; $("#gl").textContent = "Tayyorlanmoqda…";
     try {
-      const list = [...fs];
       const r = await api("/api/create", {method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({title: $("#t").value, files: list.map(f => ({type: f.type, size: f.size}))})});
+        body: JSON.stringify({title: $("#t").value, files: files.map(x => ({type: x.file.type, size: x.file.size}))})});
       const st = supabase.createClient(r.url, r.key).storage.from("muzey");
-      for (let i = 0; i < list.length; i++) {
-        $("#msg").textContent = `Yuklanmoqda… ${i + 1}/${list.length}`;
-        const {error} = await st.uploadToSignedUrl(r.signed[i].path, r.signed[i].token, list[i], {contentType: list[i].type});
+      for (let i = 0; i < files.length; i++) {
+        $("#gl").textContent = `Yuklanmoqda ${i + 1}/${files.length}`; $("#fill").style.width = (i / files.length * 100) + "%";
+        const {error} = await st.uploadToSignedUrl(r.signed[i].path, r.signed[i].token, files[i].file, {contentType: files[i].file.type});
         if (error) throw new Error("Yuklashda xatolik: " + error.message);
       }
+      $("#fill").style.width = "100%"; $("#gl").textContent = "Tayyor ✓";
       location.href = "/m/" + r.id;
-    } catch (e) { $("#msg").textContent = e.message; }
+    } catch (e) { $("#msg").textContent = e.message; btn.disabled = false; $("#gl").textContent = "Qayta urinish"; $("#fill").style.width = 0; }
   };
 }
 
 async function mine() {
-  root.innerHTML = `<h2>Muzeylarim</h2><div id="l">Yuklanmoqda…</div><p><a class="btn" href="/create">Yangi muzey</a></p>`;
+  root.innerHTML = `<div class="wrap"><div class="brand"><div class="logo">♥</div>Muzey</div><h1 class="hero">Muzeylarim</h1>
+    <div class="cards" id="l">${'<div class="sk"></div>'.repeat(4)}</div></div>
+    <div class="cta"><a class="go" href="/create">＋ Yangi muzey</a></div>`;
   try {
     const a = await api("/api/my");
-    $("#l").innerHTML = a.length ? a.map(m => `<a class="card" href="/m/${m.id}">🏛 ${esc(m.title)}</a>`).join("") : "Hali muzey yoʻq.";
-  } catch (e) { $("#l").textContent = e.message; }
+    if (!a.length) { $("#l").outerHTML = `<div class="empty"><div class="ico" style="font-size:26px">🏛</div><p>Hali muzey yoʻq.<br>Birinchisini yarating!</p></div>`; return; }
+    $("#l").innerHTML = a.map((m, i) => `<a class="mc" href="/m/${m.id}" style="animation-delay:${i * 50}ms"><div class="cv" id="c-${m.id}">♥</div><div class="tt">${esc(m.title)}</div></a>`).join("");
+    a.forEach(m => api("/api/museum?id=" + m.id).then(d => {
+      const it = d.items.find(x => x.kind === "image");
+      if (it) { const c = document.getElementById("c-" + m.id); c.style.backgroundImage = `url(${it.src})`; c.textContent = ""; }
+    }).catch(() => {}));
+  } catch (e) { $("#l").outerHTML = `<p class="err">${esc(e.message)}</p>`; }
 }
 
 async function view(id) {
   let d;
   try { d = await api("/api/museum?id=" + id); } catch (e) { root.textContent = "Muzey topilmadi."; return; }
   document.body.className = "v"; document.title = d.title;
-  root.innerHTML = `<div class="bar top"><h1 id="h"></h1></div>
-    <div class="bar bottom"><div class="btn" id="bk">▼</div><div class="btn" id="sh">Ulashish</div><div class="btn" id="qb">QR</div><div class="btn" id="fw">▲</div></div>
-    <div id="qr"><img src="/api/qr?id=${id}" alt="QR kod"><p>Telefon kamerasi bilan skanerlang</p></div>`;
+  const N = d.items.length;
+  root.innerHTML = `
+    <div class="top2">
+      <a class="pill round" href="/my" aria-label="Orqaga">‹</a>
+      <div class="pill title"><span class="hrt">♥</span><span id="h"></span></div>
+      <div class="pill red" id="sh"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M5 13v7h14v-7"/></svg>Ulashish</div>
+    </div>
+    <div class="side"><div class="pill round" id="qb">QR</div><div class="pill round" id="tm">◐</div></div>
+    <div id="joy"><div id="knob"></div></div>
+    <div id="cnt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e54864" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><span id="cn">1 / ${N}</span></div>
+    <div id="hint">Joystik bilan yuring · ekranni surib aylaning · rasmga bosing</div>
+    <div id="qr"><div class="qc"><img src="/api/qr?id=${id}" alt="QR kod"><b>${esc(d.title)}</b><p>Telefon kamerasi bilan skanerlang</p></div></div>
+    <div id="zoom"></div>
+    <div id="splash"><div><div class="logo big">♥</div><div>Muzey tayyorlanmoqda…</div><div class="spin"></div></div></div>`;
   $("#h").textContent = d.title;
   const url = location.origin + "/m/" + id;
   $("#sh").onclick = () => {
@@ -96,6 +195,7 @@ async function view(id) {
   };
   $("#qb").onclick = () => $("#qr").style.display = "flex";
   $("#qr").onclick = () => $("#qr").style.display = "none";
+  setTimeout(() => $("#hint").style.opacity = 0, 7000);
 
   const vids = [];
   const items = (await Promise.all(d.items.map(it => new Promise(res => {
@@ -111,69 +211,239 @@ async function view(id) {
     }
   })))).filter(Boolean);
 
-  const HW = 6, H = 4;
+  // ---- 2 ta xona: o'lchamlar ----
+  const HW = 6, H = 4.2, n = items.length, nA = Math.ceil(n / 2), nB = n - nA;
+  const len = k => Math.max(13, Math.ceil(k / 2) * 4.2 + 5);
+  const LA = len(nA), LB = len(nB), LT = LA + LB;
+
   const renderer = new THREE.WebGLRenderer({antialias: true});
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.outputEncoding = THREE.sRGBEncoding;
   document.body.prepend(renderer.domElement);
+  const aniso = renderer.capabilities.getMaxAnisotropy();
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x120d0a);
-  scene.fog = new THREE.Fog(0x120d0a, 8, 34);
-  const cam = new THREE.PerspectiveCamera(70, 1, 0.1, 100);
-  cam.rotation.order = "YXZ";
-  const L = Math.max(18, Math.ceil(items.length / 2) * 4.6 + 6);
-  const plane = (w, h, c, x, y, z, ry, rx) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({color: c, roughness: 0.85}));
-    m.position.set(x, y, z); m.rotation.y = ry || 0; m.rotation.x = rx || 0; scene.add(m);
+  scene.background = new THREE.Color(0xe9e5de);
+  const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+
+  const M = (c, r = 0.9, o = {}) => new THREE.MeshStandardMaterial({color: c, roughness: r, ...o});
+  const box = (w, h, dd, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, dd), mat); m.position.set(x, y, z); scene.add(m); return m; };
+  const wallM = M(0xece8e0, 0.95), trimM = M(0xd8d2c6, 0.8), wood = M(0xc9a06a, 0.55);
+
+  // pol (kafel teksturasi)
+  const fc = document.createElement("canvas"); fc.width = fc.height = 256;
+  const fx = fc.getContext("2d");
+  fx.fillStyle = "#ddd6c9"; fx.fillRect(0, 0, 256, 256); fx.strokeStyle = "#c8bfaf"; fx.lineWidth = 4; fx.strokeRect(0, 0, 256, 256);
+  const ftex = new THREE.CanvasTexture(fc);
+  ftex.wrapS = ftex.wrapT = THREE.RepeatWrapping; ftex.repeat.set(HW, LT / 2); ftex.anisotropy = aniso; ftex.encoding = THREE.sRGBEncoding;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(HW * 2, LT), new THREE.MeshStandardMaterial({map: ftex, roughness: 0.55}));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -LT / 2); scene.add(floor);
+
+  // devor, shift, xonalar orasidagi eshik
+  box(0.3, H, LT, wallM, -HW - 0.15, H / 2, -LT / 2);
+  box(0.3, H, LT, wallM, HW + 0.15, H / 2, -LT / 2);
+  box(HW * 2 + 0.6, H, 0.3, wallM, 0, H / 2, 0.15);
+  box(HW * 2 + 0.6, H, 0.3, wallM, 0, H / 2, -LT - 0.15);
+  box(HW * 2, 0.2, LT, M(0xf7f5f1, 1), 0, H + 0.1, -LT / 2);
+  box(HW - 1.3, H, 0.3, wallM, -(HW + 1.3) / 2, H / 2, -LA);
+  box(HW - 1.3, H, 0.3, wallM, (HW + 1.3) / 2, H / 2, -LA);
+  box(2.6, H - 3, 0.3, wallM, 0, 3 + (H - 3) / 2, -LA);
+  box(0.06, 3, 0.36, trimM, -1.3, 1.5, -LA); box(0.06, 3, 0.36, trimM, 1.3, 1.5, -LA); box(2.66, 0.06, 0.36, trimM, 0, 3, -LA);
+  box(0.05, 0.14, LT, trimM, -HW + 0.025, 0.07, -LT / 2); box(0.05, 0.14, LT, trimM, HW - 0.025, 0.07, -LT / 2);
+
+  // yoritish: shift relsi, lampalar, yumshoq nur
+  const amb = new THREE.AmbientLight(0xfff6e8, 0.55), hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc0, 0.4), pts = [];
+  scene.add(amb, hemi);
+  [-LA * 0.3, -LA * 0.75, -LA - LB * 0.3, -LA - LB * 0.75].forEach(z => {
+    const p = new THREE.PointLight(0xfff0dc, 0.3, 18); p.position.set(0, H - 0.6, z); scene.add(p); pts.push(p);
+  });
+  box(0.07, 0.05, LT, M(0x2a2826, 0.6), 0, H - 0.05, -LT / 2);
+  for (let z = -1.2; z > -LT; z -= 2.1) {
+    if (Math.abs(z + LA) < 0.8) continue;
+    const hd = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.16, 14), M(0x2a2826, 0.5, {emissive: 0xfff1cc, emissiveIntensity: 0.9}));
+    hd.position.set(0, H - 0.17, z); scene.add(hd);
+  }
+
+  // logotip yozuvlari
+  const logo = (txt, x, y, z, ry, sc) => {
+    const c = document.createElement("canvas"); c.width = 512; c.height = 256; const g = c.getContext("2d");
+    g.textAlign = "center"; g.fillStyle = "#e54864"; g.font = "110px system-ui,sans-serif"; g.fillText("♥", 256, 120);
+    g.fillStyle = "#8d867a"; g.font = "600 30px system-ui,sans-serif"; g.fillText(txt.toUpperCase().slice(0, 28), 256, 188);
+    const t = new THREE.CanvasTexture(c); t.anisotropy = aniso; t.encoding = THREE.sRGBEncoding;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(2 * sc, sc), new THREE.MeshBasicMaterial({map: t, transparent: true}));
+    m.position.set(x, y, z); m.rotation.y = ry; scene.add(m);
   };
-  plane(HW * 2, L, 0x4a3426, 0, 0, -L / 2, 0, -Math.PI / 2);
-  plane(HW * 2, L, 0x1c1410, 0, H, -L / 2, 0, Math.PI / 2);
-  plane(L, H, 0xe6dcc8, -HW, H / 2, -L / 2, Math.PI / 2);
-  plane(L, H, 0xe6dcc8, HW, H / 2, -L / 2, -Math.PI / 2);
-  plane(HW * 2, H, 0xd9ceb6, 0, H / 2, 0, Math.PI);
-  plane(HW * 2, H, 0xd9ceb6, 0, H / 2, -L, 0);
-  scene.add(new THREE.AmbientLight(0xfff1d6, 0.7));
-  for (let z = -3; z > -L; z -= 6) { const pl = new THREE.PointLight(0xffe2b0, 0.9, 16); pl.position.set(0, H - 0.4, z); scene.add(pl); }
-  items.forEach((im, i) => {
-    const left = i % 2 === 0, k = Math.floor(i / 2);
-    const s = Math.min(3 / im.w, 2.4 / im.h), w = im.w * s, h = im.h * s;
-    const g = new THREE.Group();
-    g.position.set(left ? -HW + 0.07 : HW - 0.07, 2, -(3.5 + k * 4.6));
-    g.rotation.y = left ? Math.PI / 2 : -Math.PI / 2;
-    const fr = new THREE.Mesh(new THREE.BoxGeometry(w + 0.34, h + 0.34, 0.12), new THREE.MeshStandardMaterial({color: 0xb98a37, roughness: 0.35, metalness: 0.6}));
-    const tex = im.video ? new THREE.VideoTexture(im.el) : new THREE.Texture(im.el);
-    tex.encoding = THREE.sRGBEncoding; tex.needsUpdate = true;
-    const pic = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({map: tex}));
-    pic.position.z = 0.07; g.add(fr, pic); scene.add(g);
+  logo(d.title, 0, 3.6, -LA + 0.17, 0, 1.0);
+  logo(d.title, 0, 2.7, -LT + 0.02, 0, 2.2);
+  logo(d.title, 0, 2.7, -0.02, Math.PI, 2.2);
+
+  // skameykalar (to'siq sifatida)
+  const blocks = [];
+  [-LA / 2, -LA - LB / 2].forEach(z => {
+    box(0.8, 0.45, 2.4, wood, 0, 0.225, z);
+    blocks.push({x0: -0.7, x1: 0.7, z0: z - 1.5, z1: z + 1.5});
   });
 
-  let yaw = 0, pitch = 0, drag = null, mv = 0; const pos = new THREE.Vector3(0, 1.6, -2), keys = {};
-  renderer.domElement.addEventListener("pointerdown", e => { drag = {x: e.clientX, y: e.clientY}; vids.forEach(v => v.play().catch(() => {})); });
-  addEventListener("pointerup", () => drag = null);
-  addEventListener("pointermove", e => {
-    if (!drag) return;
-    yaw -= (e.clientX - drag.x) * 0.005; pitch = Math.max(-0.9, Math.min(0.9, pitch - (e.clientY - drag.y) * 0.005));
-    drag = {x: e.clientX, y: e.clientY};
+  // ramkalar
+  const pics = [], oak = M(0xc9a06a, 0.5), mat = M(0xfbfaf8, 0.9);
+  const plaque = (num, g, y) => {
+    const c = document.createElement("canvas"); c.width = 128; c.height = 64; const x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0, 0, 128, 64); x.strokeStyle = "#cfc8bb"; x.lineWidth = 3; x.strokeRect(1, 1, 126, 62);
+    x.fillStyle = "#59544b"; x.font = "600 34px system-ui,sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(String(num), 64, 34);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.17), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(c)}));
+    m.position.set(0, y, 0.05); g.add(m);
+  };
+  const gc = document.createElement("canvas"); gc.width = gc.height = 128;
+  const gg = gc.getContext("2d"), gr = gg.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, "rgba(255,244,214,.55)"); gr.addColorStop(1, "rgba(255,244,214,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 128, 128);
+  const glowM = new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false}), darkM = M(0x2a2826, 0.5);
+  items.forEach((im, i) => {
+    const room = i < nA ? 0 : 1, k = room ? i - nA : i, left = k % 2 === 0;
+    const z = -(room ? LA : 0) - (3.4 + Math.floor(k / 2) * 4.2);
+    const s = Math.min(2.6 / im.w, 2.0 / im.h), w = im.w * s, h = im.h * s;
+    const g = new THREE.Group();
+    g.position.set(left ? -HW + 0.05 : HW - 0.05, 1.8, z);
+    g.rotation.y = left ? Math.PI / 2 : -Math.PI / 2;
+    const fr = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, h + 0.5, 0.08), oak);
+    const mt = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.34, h + 0.34), mat); mt.position.z = 0.05;
+    const tex = im.video ? new THREE.VideoTexture(im.el) : new THREE.Texture(im.el);
+    tex.encoding = THREE.sRGBEncoding; tex.anisotropy = aniso; tex.needsUpdate = true;
+    const pic = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({map: tex}));
+    pic.position.z = 0.065; pic.userData.i = i;
+    g.add(fr, mt, pic); plaque(i + 1, g, -(h / 2 + 0.55)); scene.add(g);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.34), darkM); arm.position.set(0, h / 2 + 0.42, 0.2);
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.075, 0.12, 12), M(0x2a2826, 0.5, {emissive: 0xfff1cc, emissiveIntensity: 0.9}));
+    lamp.position.set(0, h / 2 + 0.42, 0.37); lamp.rotation.x = Math.PI / 2 - 0.5;
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(w + 2.2, h + 2.2), glowM); glow.position.z = 0.012;
+    g.add(arm, lamp, glow);
+    pics.push({i, x: g.position.x, z, pic});
   });
+
+  // dekor: gilam, o'simliklar
+  [-LA / 2, -LA - LB / 2].forEach(z => { box(3.4, 0.02, 3.8, M(0x7a5a48, 1), 0, 0.011, z); box(3, 0.022, 3.4, M(0xcdb690, 1), 0, 0.012, z); });
+  const potM = M(0xb86f4b, 0.7), leafM = M(0x3f7d4e, 0.8), leaf2 = M(0x5a9a63, 0.8);
+  const plant = (x, z) => {
+    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    const add = (geo, m, y, dx) => { const o = new THREE.Mesh(geo, m); o.position.set(dx || 0, y, 0); g.add(o); return o; };
+    add(new THREE.CylinderGeometry(0.24, 0.18, 0.5, 16), potM, 0.25);
+    [[0, 0.95, 0.42], [0.14, 1.3, 0.3], [-0.13, 1.5, 0.26]].forEach(([dx, y, r], k) => add(new THREE.SphereGeometry(r, 14, 12), k % 2 ? leaf2 : leafM, y, dx).scale.y = 1.15);
+    blocks.push({x0: x - 0.7, x1: x + 0.7, z0: z - 0.7, z1: z + 0.7});
+  };
+  [-HW + 0.6, HW - 0.6].forEach(x => [-0.7, -LA + 0.7, -LA - 0.7, -LT + 0.7].forEach(z => plant(x, z)));
+
+  // mavzular: oq / iliq / tungi
+  const THEMES = [
+    {n: "Oq galereya", bg: 0xe9e5de, wall: 0xece8e0, floor: 0xffffff, amb: 0.55, hemi: 0.4, pt: 0.3},
+    {n: "Iliq yorugʻlik", bg: 0xe8d9c6, wall: 0xe6cfae, floor: 0xf3dcc0, amb: 0.5, hemi: 0.35, pt: 0.4},
+    {n: "Tungi galereya", bg: 0x14161d, wall: 0x39404f, floor: 0x7f8796, amb: 0.3, hemi: 0.2, pt: 0.6}];
+  let th = 0, tt = 0; try { th = (+localStorage.getItem("mt") || 0) % 3; } catch (e) {}
+  const applyTheme = () => {
+    const T = THEMES[th]; scene.background.setHex(T.bg); wallM.color.setHex(T.wall); floor.material.color.setHex(T.floor);
+    amb.intensity = T.amb; hemi.intensity = T.hemi; pts.forEach(q => q.intensity = T.pt);
+  };
+  applyTheme();
+  $("#tm").onclick = () => {
+    th = (th + 1) % 3; applyTheme(); try { localStorage.setItem("mt", th); } catch (e) {}
+    const h = $("#hint"); h.textContent = THEMES[th].n; h.style.opacity = 1; clearTimeout(tt); tt = setTimeout(() => h.style.opacity = 0, 1800);
+  };
+
+  // odam (qahramon)
+  const hero = new THREE.Group(); scene.add(hero);
+  const skin = M(0xe8b88e, 0.7), navy = M(0x23314f, 0.8), black = M(0x1a1a1d, 0.8), hair = M(0x2a1b14, 0.9);
+  const part = (geo, m, x, y, z, par) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); par.add(o); return o; };
+  const pivot = (x, y) => { const g = new THREE.Group(); g.position.set(x, y, 0); hero.add(g); return g; };
+  part(new THREE.BoxGeometry(0.46, 0.6, 0.26), navy, 0, 1.18, 0, hero);
+  part(new THREE.CylinderGeometry(0.06, 0.06, 0.1, 10), skin, 0, 1.52, 0, hero);
+  part(new THREE.SphereGeometry(0.17, 20, 16), skin, 0, 1.66, 0, hero);
+  part(new THREE.SphereGeometry(0.185, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hair, 0, 1.69, -0.02, hero);
+  [-0.06, 0.06].forEach(x => part(new THREE.SphereGeometry(0.017, 8, 8), black, x, 1.67, 0.16, hero));
+  const legL = pivot(-0.12, 0.88), legR = pivot(0.12, 0.88), armL = pivot(-0.31, 1.43), armR = pivot(0.31, 1.43);
+  [legL, legR].forEach(g => { part(new THREE.CylinderGeometry(0.085, 0.075, 0.78, 12), black, 0, -0.4, 0, g); part(new THREE.BoxGeometry(0.17, 0.1, 0.3), black, 0, -0.83, 0.05, g); });
+  [armL, armR].forEach(g => { part(new THREE.CylinderGeometry(0.065, 0.06, 0.28, 10), navy, 0, -0.14, 0, g); part(new THREE.CylinderGeometry(0.052, 0.045, 0.3, 10), skin, 0, -0.42, 0, g); });
+  const blob = new THREE.Mesh(new THREE.CircleGeometry(0.42, 24), new THREE.MeshBasicMaterial({color: 0x000000, transparent: true, opacity: 0.17, depthWrite: false}));
+  blob.rotation.x = -Math.PI / 2; blob.position.y = 0.012; scene.add(blob);
+
+  const ok = (x, z) => {
+    if (x < -HW + 0.45 || x > HW - 0.45 || z > -0.45 || z < -LT + 0.45) return false;
+    if (Math.abs(z + LA) < 0.45 && Math.abs(x) > 1.0) return false;
+    return !blocks.some(b => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1);
+  };
+
+  // boshqaruv: joystik + ekranni surib aylantirish
+  const joy = $("#joy"), knob = $("#knob"); let jx = 0, jy = 0, jid = null;
+  const jset = e => {
+    const r = joy.getBoundingClientRect(), R = r.width / 2, L2 = R * 0.7;
+    let dx = e.clientX - (r.left + R), dy = e.clientY - (r.top + R); const m = Math.hypot(dx, dy);
+    if (m > L2) { dx *= L2 / m; dy *= L2 / m; }
+    jx = dx / L2; jy = dy / L2; knob.style.transform = `translate(${dx}px,${dy}px)`;
+  };
+  joy.addEventListener("pointerdown", e => { jid = e.pointerId; joy.setPointerCapture(jid); jset(e); });
+  joy.addEventListener("pointermove", e => { if (e.pointerId === jid) jset(e); });
+  const jend = e => { if (e.pointerId === jid) { jid = null; jx = jy = 0; knob.style.transform = ""; } };
+  joy.addEventListener("pointerup", jend); joy.addEventListener("pointercancel", jend);
+
+  let camYaw = 0, camH = 2.4, drag = null, moved = 0; const keys = {};
+  const cv = renderer.domElement, zoom = $("#zoom"), ray = new THREE.Raycaster();
+  const openZ = i => {
+    const it = items[i];
+    zoom.innerHTML = it.video ? `<video src="${it.el.src}" controls autoplay loop playsinline></video>` : `<img src="${it.el.src}" alt="">`;
+    zoom.style.display = "flex";
+  };
+  zoom.onclick = e => { if (e.target.tagName !== "VIDEO") { zoom.style.display = "none"; zoom.innerHTML = ""; } };
+  const tap = e => {
+    const r = cv.getBoundingClientRect();
+    ray.setFromCamera({x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1}, cam);
+    const hit = ray.intersectObjects(pics.map(p => p.pic))[0];
+    if (hit) setTimeout(() => openZ(hit.object.userData.i), 40);
+  };
+  cv.addEventListener("pointerdown", e => { drag = {x: e.clientX, y: e.clientY, id: e.pointerId}; moved = 0; vids.forEach(v => v.play().catch(() => {})); });
+  addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; moved += Math.abs(dx) + Math.abs(dy);
+    camYaw -= dx * 0.006; camH = Math.max(1.4, Math.min(4, camH + dy * 0.01)); drag.x = e.clientX; drag.y = e.clientY;
+  });
+  addEventListener("pointerup", e => { if (drag && e.pointerId === drag.id) { if (moved < 6) tap(e); drag = null; } });
   addEventListener("keydown", e => keys[e.key.toLowerCase()] = 1);
   addEventListener("keyup", e => keys[e.key.toLowerCase()] = 0);
-  [["fw", 1], ["bk", -1]].forEach(([b, dir]) => {
-    const el = $("#" + b);
-    el.addEventListener("pointerdown", e => { e.stopPropagation(); mv = dir; });
-    ["pointerup", "pointerleave"].forEach(t => el.addEventListener(t, () => mv = 0));
-  });
   const resize = () => { renderer.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); };
   addEventListener("resize", resize); resize();
-  let last = performance.now();
+
+  const pos = new THREE.Vector3(0, 0, -2.4); let ang = Math.PI, walk = 0, near = -1, last = performance.now();
+  cam.position.set(0, camH, -0.3);
+  const sp = $("#splash"); if (sp) { sp.style.opacity = 0; setTimeout(() => sp.remove(), 500); }
   (function loop(t) {
     const dt = Math.min((t - last) / 1000, 0.05); last = t;
-    const f = mv + (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
-    const r = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
-    pos.x += (-Math.sin(yaw) * f + Math.cos(yaw) * r) * 3.2 * dt;
-    pos.z += (-Math.cos(yaw) * f - Math.sin(yaw) * r) * 3.2 * dt;
-    pos.x = Math.max(-HW + 0.9, Math.min(HW - 0.9, pos.x));
-    pos.z = Math.max(-L + 0.9, Math.min(-0.9, pos.z));
-    cam.position.copy(pos); cam.rotation.set(pitch, yaw, 0);
+    let ix = jx + (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+    let iy = jy + (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+    const m = Math.min(1, Math.hypot(ix, iy));
+    if (m > 1e-6 && Math.hypot(ix, iy) > 1) { const q = Math.hypot(ix, iy); ix /= q; iy /= q; }
+    const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
+    const vx = rx * ix - fx * iy, vz = rz * ix - fz * iy, moving = m > 0.08;
+    if (moving) {
+      const nx = pos.x + vx * 3.4 * dt, nz = pos.z + vz * 3.4 * dt;
+      if (ok(nx, pos.z)) pos.x = nx;
+      if (ok(pos.x, nz)) pos.z = nz;
+      let da = Math.atan2(vx, vz) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); ang += da * Math.min(1, dt * 12);
+      walk += dt * 9 * Math.max(0.5, m);
+    }
+    const sw = moving ? Math.sin(walk) * 0.7 : 0, k = Math.min(1, dt * 14);
+    legL.rotation.x += (sw - legL.rotation.x) * k; legR.rotation.x += (-sw - legR.rotation.x) * k;
+    armL.rotation.x += (-sw * 0.8 - armL.rotation.x) * k; armR.rotation.x += (sw * 0.8 - armR.rotation.x) * k;
+    hero.position.set(pos.x, moving ? Math.abs(Math.sin(walk)) * 0.035 : 0, pos.z); hero.rotation.y = ang;
+    blob.position.x = pos.x; blob.position.z = pos.z;
+
+    let cx = pos.x + Math.sin(camYaw) * 3.8, cz = pos.z + Math.cos(camYaw) * 3.8;
+    cx = Math.max(-HW + 0.3, Math.min(HW - 0.3, cx)); cz = Math.max(-LT + 0.3, Math.min(-0.3, cz));
+    if (Math.abs(cx) > 1.1) {
+      if (pos.z < -LA && cz > -LA - 0.4) cz = -LA - 0.4;
+      if (pos.z > -LA && cz < -LA + 0.4) cz = -LA + 0.4;
+    }
+    const f = Math.min(1, dt * 8);
+    cam.position.x += (cx - cam.position.x) * f; cam.position.z += (cz - cam.position.z) * f; cam.position.y += (camH - cam.position.y) * f;
+    cam.lookAt(pos.x, 1.25, pos.z);
+
+    let best = 1e9, bi = near < 0 ? 0 : near;
+    pics.forEach(p => { const dd = Math.hypot(p.x - pos.x, p.z - pos.z); if (dd < best) { best = dd; bi = p.i; } });
+    if (bi !== near && n) { near = bi; $("#cn").textContent = (bi + 1) + " / " + n; }
     renderer.render(scene, cam); requestAnimationFrame(loop);
   })(last);
 }
